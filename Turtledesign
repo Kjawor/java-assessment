@@ -1,0 +1,665 @@
+import java.awt.Color;
+
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JTextField;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+
+import uk.ac.leedsbeckett.oop.LBUGraphics;
+import java.io.File;
+
+import java.io.FileReader;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import java.awt.Graphics;
+
+
+public class GraphicsSystem extends LBUGraphics
+{
+		private String command;
+		private String lastline = "";
+		ArrayList<String> savedt = new ArrayList<String>();
+        public static void main(String[] args)
+        {	
+        	
+                new GraphicsSystem(); //create instance of class that extends LBUGraphics (could be separate class without main), gets out of static context
+
+        }
+        public GraphicsSystem()
+        {
+                JFrame MainFrame = new JFrame();
+               
+            
+                JMenuItem isave, iload, istext, iltext,isquare,itriangle,icircle,ired,iblack,igreen,iwhite,icustom;  
+                JMenuBar menubar=new JMenuBar(); 
+                menubar.setBackground(Color.LIGHT_GRAY);
+                JMenu menufile=new JMenu("File");
+                JMenu menuhelp=new JMenu("Commands");   
+                JMenu menushapes=new JMenu("Shapes");  
+                JMenu menucolour=new JMenu("Colour");
+                
+                isave=new JMenuItem("save");
+                isave.addActionListener(new MenuActionListener());
+                iload=new JMenuItem("load");  
+                iload.addActionListener(new MenuActionListener());
+                istext=new JMenuItem("savetext");  
+                istext.addActionListener(new MenuActionListener());
+                iltext=new JMenuItem("loadtext");  
+                iltext.addActionListener(new MenuActionListener());
+                menufile.add(isave); menufile.add(iload); menufile.add(istext); menufile.add(iltext);  
+                menubar.add(menufile); 
+                
+                menuhelp.addMenuListener(new HelpMenuListener());    
+
+
+
+                	
+                menubar.add(menuhelp);
+                
+                isquare = new JMenuItem("square");
+                isquare.addActionListener(new shapeinput());
+                itriangle = new JMenuItem("triangle");
+                itriangle.addActionListener(new shapeinput());
+                icircle = new JMenuItem("circle");
+                icircle.addActionListener(new shapeinput());
+                menushapes.add(isquare); menushapes.add(itriangle); menushapes.add(icircle);
+                menubar.add(menushapes);
+                
+                ired=new JMenuItem("red");
+                ired.addActionListener(new MenuActionListener());
+                iblack= new JMenuItem("black");
+                iblack.addActionListener(new MenuActionListener());
+                igreen= new JMenuItem("green");
+                igreen.addActionListener(new MenuActionListener());
+                iwhite= new JMenuItem("white");
+                iwhite.addActionListener(new MenuActionListener());
+                icustom = new JMenuItem("custom");
+                icustom.addActionListener(new ColorListener());
+                menucolour.add(ired); menucolour.add(iblack); menucolour.add(igreen); menucolour.add(iwhite); menucolour.add(icustom);
+                menubar.add(menucolour);                
+                MainFrame.setJMenuBar(menubar);
+               //create a frame to display the turtle panel on
+                MainFrame.setLayout(new FlowLayout());  
+                
+                
+                MainFrame.add(this);
+                MainFrame.pack(); 
+               
+                MainFrame.setVisible(true);  
+                MainFrame.validate();
+                MainFrame.repaint();
+                MainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                
+                
+                //super.about();
+                
+                MainFrame.addWindowListener(new WindowAdapter() {
+                    public void windowClosing(WindowEvent e) {
+                        // Do something when the window is closing
+                    	readlast();
+                        
+                    	if(!lastline.equals("save") ) 
+                    	{
+                    		JFrame warning = new JFrame();
+                    		JOptionPane.showMessageDialog(warning,"You haven't saved","Warning",JOptionPane.WARNING_MESSAGE);
+                    	}
+                    	else {
+                    	
+                    		System.out.println("Window is closing.");
+                    		MainFrame.dispose();
+                    		}
+                        
+                    }
+                });
+                
+
+        }
+        class MenuActionListener implements ActionListener {
+        	public void actionPerformed(ActionEvent e) {
+        		
+        	    
+        	    processCommand(e.getActionCommand());
+
+        }
+        }
+        
+        class shapeinput implements ActionListener {
+        	public void actionPerformed(ActionEvent d) {
+        		JFrame shp = new JFrame();
+        		String size = JOptionPane.showInputDialog(shp,"enter size",JOptionPane.QUESTION_MESSAGE);
+        		String full =  d.getActionCommand() + " "+ size; 
+        		processCommand(full);
+        		
+        	}
+        }
+        class ColorListener implements ActionListener {
+        	public void actionPerformed(ActionEvent f) {
+        		JFrame colorpick = new JFrame();
+        		JPanel but = new JPanel();
+        		but.setLocation(350,200);
+        		JButton confirm = new JButton("confirm");
+        		confirm.setBounds(200,100,2,30);
+        		JTextField num1 = new JTextField(20);
+        		num1.setBounds(50,150, 200,30);
+        		
+        		JTextField num2 = new JTextField(20);
+        		num2.setBounds(300,150, 200,30);
+        		JTextField num3 = new JTextField(20);
+        		num3.setBounds(550,150, 200,30);
+        		colorpick.add(num1);
+        		colorpick.add(num2);
+        		colorpick.add(num3);
+        		
+        		but.add(confirm);
+
+        		colorpick.add(but);
+        		colorpick.setSize(800,300);
+        		colorpick.setVisible(true);
+        		colorpick.setLayout(null);
+        		confirm.addActionListener(new colorselect() {public void actionPerformed(ActionEvent j) {
+            		int pnum1 = Integer.parseInt(num1.getText());
+            		int pnum2 = Integer.parseInt(num2.getText());
+            		int pnum3 = Integer.parseInt(num3.getText());
+            		String pcolor = "pencolour " +pnum1 + " " + pnum2 + " " + pnum3;
+            		processCommand(pcolor);
+            		
+            		
+        		}
+        		});
+
+        		
+        	}
+        }
+        class colorselect implements ActionListener{
+        	public void actionPerformed(ActionEvent j) {
+
+        	}
+        }
+        class HelpMenuListener implements MenuListener {
+        	@Override
+        	public void menuSelected(MenuEvent e) {
+            	
+            		JFrame helpwindow = new JFrame();
+            		JPanel h = new JPanel();
+            		String helplist[] = {"penup- Lifts the pen(turtle won't draw)","pendown- Lowers the pen onto canvas(turtle will draw)","turnleft- Makes turtle turn left by 90 degrees or specified number"
+            				, "turnright- Makes turtle turn right by 90 degrees or specified number","forward- Moves the turtle forward by specified number", "backward- Moves turtle backward by number",
+            				"black- turns the pen colour black","green- Turns the pen colour green", "red- Turns the pen colour red", "white- Turns the pen colour white", 
+            				"reset- Resets the turtle to the starting position alongside resetting the pendwidth and colours to default", "savetext- saves the commands typed in by the user to a file",
+            				"square- draws a square with a specified perimeter","cleararray- removes previously typed in commands from storage meaning they cannot be saved","save- Saves the image",
+            				"pencolour- changes the pen colour by specified value(takes name or hex)","load- loads previously saved image","clear- removes everything drawn from display",
+            				"direction- gets the direction the turtle is pointing in","loadtext- loads previously saved text from a file","triangle- draws a equilateral triangle with specified side length",
+            				"penwidth- changes the width of the pen","cleartext- removes previously saved text from a file","circle- draws a circle with specified radius"};
+            		
+    				JList<String> helps = new JList<>(helplist);
+            		h.add(helps);
+            		helpwindow.add(h);
+            		helpwindow.setSize(615,475);
+            		helpwindow.setVisible(true);
+            		helpwindow.setLocationRelativeTo(null);
+            		helpwindow.setAlwaysOnTop( true );
+            	}
+        	@Override
+            public void menuDeselected(MenuEvent e) {
+                
+            }
+        	@Override
+            public void menuCanceled(MenuEvent e) {
+                System.out.println("menuCanceled");
+            }
+        	}
+        
+        public void processCommand(String command)              //this method must be provided because LBUGraphics will call it when it's JTextField is used
+        {
+        	
+        	this.command = command;
+        	command = command.toLowerCase();
+        	
+        	savedt.add(command);
+
+        	
+        	String[] split = command.split(" ");
+        	
+        	for(int i=0; i<split.length; i++){
+        	    System.out.println(split[i]);
+        	    
+        	}
+
+        	int number = 0;
+        	int num1 = 0;
+        	int num2= 0;
+        	int num3 = 0;
+        	Boolean check;
+        	
+        	String word = split[0];
+        	if (split.length == 2) {
+        		try
+        		{
+        			number = Integer.parseInt(split[1]);
+        			
+        			if (number < 0) {
+        				System.out.println("cannot use negatives");
+        				check = false;
+        				return;
+        				
+        			}
+        			
+        			else {
+        				check = true;
+        			}
+        			
+        		}catch(NumberFormatException error)
+        		{
+        			System.out.println("not a number");
+        			return;
+        		}
+        		
+        	}
+        	
+        	
+        	
+        	else if(split.length == 4) {
+        		try {
+            	if(Integer.parseInt(split[1]) > 255 || Integer.parseInt(split[2]) > 255 || Integer.parseInt(split[3])> 255) {
+            			System.out.println("out of bounds");
+            			
+            		}
+            	else {
+            	
+        		num1 = Integer.parseInt(split[1]);
+        		num2 = Integer.parseInt(split[2]);
+        		num3 = Integer.parseInt(split[3]);
+        		
+        		}
+        		}catch(IllegalArgumentException error){
+        			System.out.println("not a number");
+        			error.printStackTrace();
+        			throw error;
+        		}
+        		check = true;
+        	}
+        	
+        	else {
+        		check = false;
+        	}
+        	
+        	
+        	switch(word) {
+    		case "penup":
+    			penUp();
+    			break;
+        	case "pendown":
+    			penDown();
+    			break;
+    		case "turnleft":
+        		if (check == true) {
+        			turnLeft(number);
+        		}
+        		else {
+        			turnLeft();
+        		}
+        		break;
+    		case "turnright":
+        		if (check == true) {
+        			turnRight(number);
+        		}
+        		else {
+        			turnRight();
+        		}
+        		
+        		break;
+    		case "circle":
+    			penDown();
+    			if(check == true) {
+    				circle(number);
+    			}
+    			break;
+    		case "forward":
+    			if (check == true) {
+    				forward(number);
+    			}
+    			else {
+    				System.out.println("number not provided");
+    			}
+    			break;
+    		case "backward":
+    			if (check == true) {
+    				forward(-number);
+    			}
+    			else {
+    				System.out.println("number not provided");
+    			}
+    			break;
+    		case "black":
+    			super.setPenColour(Color.black);
+    			break;
+    		case "green":
+    			super.setPenColour(Color.green);
+    			break;
+    		case "red":
+    			super.setPenColour(Color.red);
+    			break;
+    		case "white":
+    			super.setPenColour(Color.white);
+    			break;
+    		case "reset":
+    			reset();
+    			penwidth(1);
+    			super.setPenColour(Color.red);
+    			break;
+    			
+    		case "savetext":
+    			System.out.println("text saved");
+            	savetext();
+    			break;
+    		case "square":
+    			if (check == true) {
+    				square(number);
+    				
+    			}
+    			else {
+    				System.out.println("number not provided");
+    			}
+    			break;
+    		case "cleararray":
+    			savedt.clear();
+    			break;
+    		case "save":
+    			
+    			save();
+    			
+    			
+    			break;
+
+    		case "speed":
+    			if (check == true) {
+    			setTurtleSpeed(number);
+    			}
+    			break;
+    		//case "about":
+    			//about();
+    			//break;
+    		case "pencolour":
+    			if(check == true) {
+
+    				pencolour(num1, num2, num3);
+    				}
+    			else {
+    				System.out.println("number not provided");
+    			}
+    			break;
+    		case "load":
+    			load();
+    			break;
+
+    		case "clear":
+    			clear();
+    			break;
+    		case "direction":
+    			System.out.println(getDirection());
+    			break;
+    		case "loadtext":
+    			loadtext();
+    			break;
+    		case "triangle":
+    			if (check == true) {
+    			triangle(number);
+    			}
+    			break;
+    		case "penwidth":
+    			if (check == true) {
+    				penwidth(number);
+    			}
+    			else {
+    				System.out.println("number not provided");
+    			}
+    			break;
+    		case "destiny":
+    			destiny();
+    			break;
+    		case "cleartext":
+    			File clear = new File("text.txt");
+    			try{
+    				FileWriter c = new FileWriter(clear);
+    				
+    			}
+    			catch (IOException e) {
+    				e.printStackTrace();
+    			}
+    			break;
+
+    		default:
+    		
+    			System.out.println("unknown");
+        	}
+        	if (command.equals("about")) {
+        			about();
+        			setxPos(400);
+        			setyPos(200);
+        			pointTurtle(180);
+        			//super.about();
+        			
+        			
+        	}
+
+
+        }
+    	public void save()
+    	{
+    		
+    		File outputfile = new File("image.png");
+
+
+    		try {
+
+    			ImageIO.write(getBufferedImage(), "png", outputfile);
+    		} catch (IOException e) {
+    			
+    			e.printStackTrace();
+    		}
+    	}
+    	public void load() 
+    	{
+    		BufferedImage image;
+    		try {
+    			image = ImageIO.read(new File("image.png"));
+    			setBufferedImage(image);
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    	
+    		repaint();
+    		
+    	}
+
+public void loadtext() {
+	try {
+
+		ArrayList<String> com = new ArrayList<>(Arrays.asList());
+		BufferedReader r = new BufferedReader(new FileReader("text.txt"));
+
+		String line = r.readLine();
+		while(line != null) {
+			com.add(line);
+			line = r.readLine();
+		}
+
+
+		for (String i : com) {
+	
+			processCommand(i);
+			
+		}
+		System.out.println(com);
+		r.close();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	
+}
+
+public String readlast() {
+	
+    try (BufferedReader br = new BufferedReader(new FileReader("text.txt"))) {
+        String line;
+        while ((line = br.readLine()) != null) {
+            lastline = line;
+           
+        }
+        
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    
+    return lastline;
+}
+@Override
+public void about() {
+
+	
+
+	penUp();
+	pointTurtle(270);
+	setxPos(250);
+	setyPos(200);
+	turnLeft();
+	penDown();
+	setStroke(10);
+	setPenColour(Color.red);//Colour = 12;
+	circle(50);
+	penUp();
+	turnLeft(90);
+	forward(150);
+	penDown();
+	setPenColour(Color.green);//Colour = 9;
+	circle(50);
+	
+	penUp();
+	forward(100);
+	penUp();
+	setPenColour(Color.blue);//Colour = 2;
+	turnLeft(90);
+	forward(50);
+	penDown();
+	turnRight(180);
+	forward(100);
+	turnLeft(180);
+	penUp();
+	forward(75);
+	turnRight(90);
+	forward(25);
+	penDown();
+	circle(25);
+	penUp();
+	forward(100);
+	turnRight(360);
+	reset();
+	BufferedImage bufImg = getBufferedImage();
+	Graphics g = bufImg.getGraphics();
+	g.drawString("Kacper",225,200);
+
+}
+public void square(int number) {
+	penDown();
+	forward(number);
+	turnRight();
+	forward(number);
+	turnRight();
+	forward(number);
+	turnRight();
+	forward(number);
+	turnRight();
+
+}
+public void triangle(int number) {
+	penDown();
+	turnRight();
+	forward(number);
+	turnRight(120);
+	forward(number);
+	turnRight(120);
+	forward(number);
+	turnRight(30);
+	
+}
+public void setPenColour(int r, int g, int b) {
+    Color col = new Color(r, g, b);
+    PenColour = col;
+}
+public void pencolour(int red, int green, int blue) {
+	setPenColour(red, green, blue);
+}
+
+public void penwidth(int width) {
+	setStroke(width);
+}
+public void savetext() {
+	try {
+		int index = savedt.size()-1;
+		savedt.remove(index);
+		BufferedWriter text = new BufferedWriter(new FileWriter("text.txt",true));
+		for (int i = 0; i < savedt.size(); i++) {
+			String line = savedt.get(i);
+			
+            text.write("\n" + line);
+            
+            
+		}
+		text.close();
+		readlast();
+		
+
+    }
+    catch(Exception e) {
+        e.getStackTrace();
+    }
+}
+public void destiny() {
+	turnRight();
+	forward(350);
+	turnRight(135);
+	penDown();
+	setStroke(15);
+	forward(60);
+	penUp();
+	forward(15);
+	turnRight(90);
+	forward(30);
+	penDown();
+	forward(60);
+	turnRight(135);
+	penUp();
+	forward(20);
+	turnLeft(135);
+	penDown();
+	forward(60);
+}
+
+
+}
